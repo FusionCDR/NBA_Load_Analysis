@@ -1,10 +1,13 @@
-import pandas as pd
-import numpy as np
-from pathlib import Path
 import json
-from typing import List, Optional, Tuple
-from nba_api.stats.endpoints import leaguegamelog
 import logging
+from pathlib import Path
+from typing import List, Optional, Tuple
+
+import numpy as np
+import pandas as pd
+from nba_api.stats.endpoints import leaguegamelog
+
+from src.config import get_path
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -12,8 +15,9 @@ logger = logging.getLogger(__name__)
 
 class DataLoader:
     
-    def __init__(self, cache_dir: str = "data/raw"):
-        self.cache_dir = Path(cache_dir)
+    def __init__(self, cache_dir: Optional[str] = None):
+        default_cache = get_path("raw_data_dir", "data/raw")
+        self.cache_dir = Path(cache_dir or default_cache)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.team_mapping = {
             1610612737: 'ATL', 1610612738: 'BOS', 1610612751: 'BKN', 
@@ -67,21 +71,18 @@ class DataLoader:
     def _process_raw_games(self, df: pd.DataFrame) -> pd.DataFrame:
         
         games = df.copy()
-        # home/away parse
         games['HOME'] = games['MATCHUP'].str.contains('vs.').astype(int)
-        games['WL'] = (games['WL'] == 'W').astype(int)
+        games['WIN'] = (games['WL'] == 'W').astype(int)
         games['GAME_DATE'] = pd.to_datetime(games['GAME_DATE'])
         
-        # Get opponent info via self-join on GAME_ID
-        games_opp = games[['GAME_ID', 'TEAM_ID', 'PTS']].copy()
-        games_opp.columns = ['GAME_ID', 'OPP_ID', 'OPP_PTS']
-        
+        opp_stats_cols = ['GAME_ID', 'TEAM_ID', 'PTS', 'FGA', 'OREB', 'TOV', 'FTA']
+        games_opp = games[opp_stats_cols].copy()
+        games_opp.columns = ['GAME_ID', 'OPP_ID', 'OPP_PTS', 'OPP_FGA', 'OPP_OREB', 'OPP_TOV', 'OPP_FTA']
         games = games.merge(
             games_opp, 
             on='GAME_ID',
             how='inner'
         )
-        # Remove self-matches
         games = games[games['TEAM_ID'] != games['OPP_ID']]
         
         return games
@@ -90,8 +91,20 @@ class DataLoader:
 def prepare_model_data(games: pd.DataFrame) -> pd.DataFrame:
 
     df = games.copy()
-    # TODO: switch to possession based data
-    df['NET_RATING_GAME'] = df['PTS'] - df['OPP_PTS']
+
+    def estimate_possessions(fga, oreb, tov, fta):
+        return fga - oreb + tov + 0.44 * fta
+
+    team_possessions = estimate_possessions(df['FGA'], df['OREB'], df['TOV'], df['FTA'])
+    opp_possessions = estimate_possessions(df['OPP_FGA'], df['OPP_OREB'], df['OPP_TOV'], df['OPP_FTA'])
+
+    team_possessions = team_possessions.mask(team_possessions == 0)
+    opp_possessions = opp_possessions.mask(opp_possessions == 0)
+
+    off_rating = (df['PTS'] / team_possessions) * 100
+    def_rating = (df['OPP_PTS'] / opp_possessions) * 100
+    df['NET_RATING_GAME'] = (off_rating - def_rating).fillna(0)
+
     df = df.sort_values(['TEAM_ID', 'SEASON', 'GAME_DATE', 'GAME_ID'])
     
     loader = DataLoader()
@@ -101,14 +114,12 @@ def prepare_model_data(games: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def load_locations(filepath: str = "data/locations.json") -> pd.DataFrame:
-    with open(filepath, 'r') as f:
+def load_locations(filepath: Optional[str] = None) -> pd.DataFrame:
+    loc_path = Path(filepath or get_path("locations_file", "data/locations.json"))
+    with loc_path.open('r') as f:
         locations = json.load(f)
         location_df = pd.DataFrame(locations)
         column_map = {'team': 'TEAM'}
         location_df = location_df.rename(columns=lambda c: column_map.get(c, c.upper()))
 
     return location_df
-
-pd.set_option('display.max_columns', None)
-print(load_locations())

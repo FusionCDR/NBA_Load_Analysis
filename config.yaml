@@ -1,0 +1,63 @@
+project:
+  default_seasons:
+    - "2019"
+    - "2020"
+    - "2021"
+    - "2022"
+    - "2023"
+    - "2024"
+  default_model_variant: basic
+
+paths:
+  raw_data_dir: data/raw
+  feature_cache_dir: data/cache
+  results_dir: data/results
+  locations_file: data/locations.json
+  optuna_storage: data/cache/optuna_study.db
+  predictions_file: data/results/predictions.csv
+  summary_file: data/results/analysis_summary.json
+  optimal_params_file: data/results/optimal_params.json
+  model_comparison_file: data/results/model_comparison.csv
+  optimization_history_file: data/results/optimization_history.csv
+  team_impacts_plot: data/results/team_schedule_impacts.png
+  optimization_history_plot: data/results/optimization_history.png
+  feature_importance_plot: data/results/feature_importance.png
+
+feature_params:
+  window_N: 10
+  games_lookback: 5
+  games_lookahead: 1
+  travel_lookback: 5
+  tz_lookback: 5
+  w_rest: 1.0
+  w_stretch: 1.0
+  w_density: 2.0
+  w_distance: 1.0
+  w_recent_travel: 1.0
+  w_tz: 0.5
+  w_tz_rolling: 0.5
+  stretch_configs:
+    n: [2, 3, 4, 4]
+    m: [2, 4, 5, 6]
+  use_log_distance: false
+  use_polynomial: false
+  use_interactions: true
+
+analysis:
+  risky_threshold: -0.10
+  risk_bins: [-1.0, -0.20, -0.15, -0.10, 0.0]
+  calibration_bins:
+    start: -0.3
+    stop: 0.3
+    step: 0.05
+  calibration_min_games: 100
+  calibration_min_divergence: 0.05
+  top_n_teams: 10
+  default_prediction_season: "2024"
+
+optimization:
+  study_name: nba_schedule_load
+  storage_file: data/cache/optuna_study.db
+  n_splits: 3
+  val_size: 0.15
+  test_size: 0.15
