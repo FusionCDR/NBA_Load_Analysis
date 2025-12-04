@@ -9,7 +9,7 @@ import yaml
 DEFAULT_CONFIG: Dict[str, Any] = {
     "project": {
         "default_seasons": ["2019", "2020", "2021", "2022", "2023", "2024"],
-        "default_model_variant": "basic",
+        "default_model_variant": "b2b_travel",
     },
     "paths": {
         "raw_data_dir": "data/raw",
