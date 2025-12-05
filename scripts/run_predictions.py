@@ -88,7 +88,7 @@ def plot_analysis(df):
     df['Result'] = df['WL'].map({'W': 'Win', 'L': 'Loss'})
     
     colors_map = {'Win': '#2ecc71', 'Loss': '#e74c3c'}
-    marker_map = {0: 'O', 1: 'X'}
+    marker_map = {0: 'o', 1: 'X'}
     scatter_artists = []
 
     for b2b_val, marker in marker_map.items():

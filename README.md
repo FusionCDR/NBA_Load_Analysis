@@ -51,6 +51,15 @@ Data-science project that attempts to show how schedule load (rest, back-to-back
   ```
   Hover over points in the resulting scatter plot to see team/opponent, schedule impact, and win probability.
 
+## Findings (latest cached results)
+- Best model: `b2b_travel` edged out other GLM variants in log loss (0.651 vs ~0.6512) with similar AUC (~0.663) and Brier (~0.230). Travel main effect was not significant in the full fit.
+- Top schedule winners (2019–2024 sample): NOP, DEN, DET, PHI, MIA gained roughly +0.54 to +0.81 wins from schedule context.
+- Biggest schedule losers: LAC, ATL, OKC, BOS, GSW lost roughly -0.44 to -1.22 wins due to schedule context.
+- Key coefficients (b2b_travel fit): home advantage positive and significant; team strength differential strongly positive; load differential negative and significant; travel differential not significant. Most notably, travel, as defined by distance and timezone changes in the optimized span of time, was not found to have a statistically significant impact on team performance at any point in the pipeline.
+- Optimal feature weights from Optuna (quick study): `w_rest`≈1.85, `w_stretch`≈2.00, `w_density`≈2.99, `w_distance`≈1.06, `w_recent_travel`≈1.44; model variant `b2b_travel`.
+- Calibrated risky threshold: schedule impact below about -0.075 flags games as risky in exports.
+
+
 ## Key Outputs
 - `data/results/predictions*.csv` – per-game probabilities, schedule impacts, load/travel scores.
 - Plots: feature importance, team schedule impact, optimization history, interactive scatter/bar chart for forward predictions.
