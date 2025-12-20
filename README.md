@@ -18,7 +18,7 @@ Data-science project that attempts to show how schedule load (rest, back-to-back
   ```
 - Data source: free `nba_api` (no key needed). Game logs are cached under `data/raw/`.
 
-## Repo Structure (core)
+## Structure
 - `scripts/run_pipeline.py` – end-to-end CLI (data load, model comparison/optimization, analysis, plots).
 - `scripts/run_predictions.py` – forward predictions for a partial season with interactive scatter plot.
 - `src/data_loader.py` – fetch/process game logs, compute per-game net rating.
@@ -27,7 +27,7 @@ Data-science project that attempts to show how schedule load (rest, back-to-back
 - `src/optimization.py` – Optuna tuner and optimal param persistence.
 - `src/analysis.py` – analysis helpers, summary export, plotting.
 
-## Typical Workflows
+## Workflows
 - Full pipeline (defaults in `config.yaml`):  
   ```bash
   python3 scripts/run_pipeline.py --mode full
@@ -62,7 +62,7 @@ Data-science project that attempts to show how schedule load (rest, back-to-back
 
 ## Key Outputs
 - `data/results/predictions*.csv` – per-game probabilities, schedule impacts, load/travel scores.
-- Plots: feature importance, team schedule impact, optimization history, interactive scatter/bar chart for forward predictions.
+- Plots: feature importance, team schedule impact, interactive scatter/bar chart for forward predictions.
 - `data/results/optimal_params.json` – tuned feature weights and chosen model variant.
 
 ## Data Flow & Caching
@@ -74,7 +74,7 @@ Data-science project that attempts to show how schedule load (rest, back-to-back
   - `prepare_model_data` takes the raw logs, joins opponent stats, flags home/away, computes win flag, and estimates possessions.
   - It then computes `NET_RATING_GAME` (using standard formula), sorts chronologically, and adds team abbreviations.
 - Feature engineering
-  - `FeatureEngineering.compute_features` (`src/features.py`) takes the processed games plus team location metadata and builds:
+  - `FeatureEngineering.compute_features` (`src/features.py`) takes the processed games plus team location data and builds:
     - `STRENGTH_PRE`: lagged rolling 10-game net rating per team/season.
     - Schedule features: rest days, back-to-backs, stretch density, rest penalties.
     - Travel features: haversine distances, timezone changes, rolling travel load.
@@ -85,7 +85,7 @@ Data-science project that attempts to show how schedule load (rest, back-to-back
   - If an identical call is made later, features are loaded from cache instead of recomputed.
 - Model fitting and params
   - `src/model.py` defines GLM variants and handles fitting, evaluation, and counterfactuals (`P_FACTUAL`, `P_NEUTRAL`, `SCHEDULE_IMPACT`).
-  - `src/optimization.py` uses Optuna with a SQLite backend (`data/cache/optuna_study.db`) to search over feature parameters; the best config is stored in `data/results/optimal_params.json` along with a CSV trial history.
+  - `src/optimization.py` uses Optuna to search over feature parameters; the best config is stored in `data/results/optimal_params.json` along with a CSV trial history.
   - `ScheduleAnalyzer` (`src/analysis.py`) pulls optimal params (or defaults), recomputes features (using feature cache), fits the chosen GLM, and materializes full-season results for plotting and CSV export.
 - Forward prediction path
   - `scripts/run_predictions.py`:
@@ -94,7 +94,7 @@ Data-science project that attempts to show how schedule load (rest, back-to-back
     - The team strength approximation is based on a rolling window of the past 10 games played for that team. The input block is not sorted by team, but at 300 games, all teams will have approximately played 10 games each. This is thus the minimum recommended number of games treated as completed; the strength is a strong predictor of performance, so games involving no data for either team are dropped from the prediction output entirely.
     - Calls `ScheduleAnalyzer.predict_from_features` on the future portion only, then writes predictions to a dedicated CSV and opens an interactive Matplotlib scatter/bar plot.
 
-## Notes for Reviewers
+## Notes
 - Features are strictly time-aware: team strength uses lagged rolling net rating; schedule density can look ahead because the schedule is known.
 - Forward prediction runs include only completed games for strength; travel/load derive from published schedule.
 - Dependencies include `mplcursors` for interactive hovering; everything else is mainstream DS stack (pandas, numpy, statsmodels, seaborn, optuna, sklearn).
