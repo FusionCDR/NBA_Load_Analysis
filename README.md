@@ -1,6 +1,6 @@
 # NBA Schedule Impact Analysis
 
-Data-science project that attempts to show how schedule load (rest, back-to-backs, travel) affects NBA win probabilities. It involves fitting a logistic GLM to historical games, computes counterfactual “neutral” win chances, and exports per-game schedule impact. Includes a forward-prediction script for testing.
+Data science project that attempts to show how schedule load (rest, back-to-backs, travel) affects NBA win probabilities. It involves fitting a logistic GLM to historical games, computes counterfactual “neutral” win chances, and exports per-game schedule impact. Includes a forward-prediction script for testing.
 
 ## Features
 - End-to-end pipeline: fetch + cache game logs from `nba_api`, feature engineering, model fitting, reporting, and plots.
